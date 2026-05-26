@@ -43,11 +43,16 @@ function createMainWindow() {
     height: 600,
     frame: false,
     show: false, // Start hidden
+    alwaysOnTop: true,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
+  mainWindow.setAlwaysOnTop(true, 'floating');
 
   mainWindow.loadFile('src/renderer/list/list.html');
 
@@ -96,11 +101,16 @@ function createNoteWindow(notePath, position = null, isNew = false) {
     y: position?.y ?? savedBounds?.y,
     frame: false,
     show: false, // Start hidden
+    alwaysOnTop: true,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: true,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
     },
   });
+  win.setAlwaysOnTop(true, 'floating');
 
   win.loadFile('src/renderer/note/note.html');
 
@@ -335,6 +345,20 @@ ipcMain.on('open-main-window', () => {
   } else {
     mainWindow.focus(); // Focus existing window
   }
+});
+
+// Toggle alwaysOnTop for the requesting window; reply with new state.
+ipcMain.handle('toggle-always-on-top', event => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) return false;
+  const newState = !win.isAlwaysOnTop();
+  win.setAlwaysOnTop(newState, newState ? 'floating' : 'normal');
+  return newState;
+});
+
+ipcMain.handle('get-always-on-top', event => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return win ? win.isAlwaysOnTop() : false;
 });
 
 ipcMain.handle('get-user-data-path', () => {

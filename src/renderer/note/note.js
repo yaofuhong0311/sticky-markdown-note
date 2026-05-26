@@ -17,6 +17,9 @@ const fontSizeMax = parseInt(process.env.FONT_SIZE_MAX) || 40;
 
 let currentPath = null;
 let currentFontSize = defaultFontSize;
+let currentOpacity = 0.9;  // 默认 90% 不透明
+const opacityMin = 0.2;
+const opacityMax = 1.0;
 let userImagesDir = null; // User image save path
 let appRootPath = null; // Variable to store the app root path
 
@@ -350,6 +353,130 @@ document.addEventListener('DOMContentLoaded', async () => {
   const viewToggleBtn = document.getElementById('view-toggle');
   const onlyToggleBtn = document.getElementById('only-toggle');
   const newNoteBtn = document.getElementById('new-note');
+  const pinToggleBtn = document.getElementById('pin-toggle');
+
+  // === 顶部格式按钮点击处理(文档级委托) ===
+  // 上次预览区里的选区(用 mousedown 在按钮点击前抓取, 避免点按钮时丢失)
+  let lastPreviewSelection = '';
+  preview.addEventListener('mouseup', () => {
+    const sel = window.getSelection();
+    if (sel && sel.toString() && preview.contains(sel.anchorNode)) {
+      lastPreviewSelection = sel.toString();
+    }
+  });
+  preview.addEventListener('mousedown', () => {
+    // 重置, 直到下次 mouseup 抓到新选区
+    lastPreviewSelection = '';
+  });
+
+  function getSelectionInfo() {
+    // 1) 优先取预览区的选区(用户当前可见的)
+    if (lastPreviewSelection) {
+      // 清理两端空白(三击选中常会带行末换行)
+      const sel = lastPreviewSelection.replace(/^\s+|\s+$/g, '');
+
+      // 跨行选区不处理 — wrap markdown 不能跨行, 否则会毁掉结构
+      if (!sel || sel.includes('\n')) return null;
+
+      const idx = editor.value.indexOf(sel);
+      if (idx === -1) return null;
+
+      return {
+        start: idx,
+        end: idx + sel.length,
+        selected: sel,
+      };
+    }
+    // 2) 退回到 textarea 的选区(只在有真实选区时返回)
+    const sStart = editor.selectionStart;
+    const sEnd = editor.selectionEnd;
+    if (sStart === sEnd) return null;
+    return {
+      start: sStart,
+      end: sEnd,
+      selected: editor.value.slice(sStart, sEnd),
+    };
+  }
+
+  {
+    const wrap = {
+      bold:          { l: '**',  r: '**'  },
+      italic:        { l: '*',   r: '*'   },
+      underline:     { l: '<u>', r: '</u>' },
+      strikethrough: { l: '~~',  r: '~~'  },
+      code:          { l: '`',   r: '`'   },
+    };
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.format-btn');
+      if (!btn || !btn.dataset.action) return;
+      const action = btn.dataset.action;
+      const info = getSelectionInfo();
+
+      // 没有有效选区(空 / 跨行 / 找不到匹配) → 闪红色提示, 不修改
+      if (!info) {
+        btn.style.transition = 'background-color 0.2s';
+        btn.style.backgroundColor = 'rgba(255, 90, 90, 0.45)';
+        setTimeout(() => { btn.style.backgroundColor = ''; }, 280);
+        return;
+      }
+      const { start, end, selected } = info;
+
+      const text = editor.value;
+      if (action === 'quote') {
+        // 引用切换: 已有 "> " 前缀就移除, 否则添加
+        const lines = selected.split('\n');
+        const allQuoted = lines.every(l => l.startsWith('> '));
+        const result = allQuoted
+          ? lines.map(l => l.slice(2)).join('\n')
+          : lines.map(l => '> ' + l).join('\n');
+        editor.value = text.slice(0, start) + result + text.slice(end);
+        editor.selectionStart = editor.selectionEnd = start + result.length;
+      } else if (wrap[action]) {
+        const { l, r } = wrap[action];
+        // === 切换逻辑 ===
+        // Case 1: 标记紧贴在选区外面(例如选区是 "agent", 外面有 **agent**)
+        //         → 去掉外围的标记
+        if (text.slice(start - l.length, start) === l &&
+            text.slice(end, end + r.length) === r) {
+          editor.value =
+            text.slice(0, start - l.length) + selected + text.slice(end + r.length);
+          editor.selectionStart = start - l.length;
+          editor.selectionEnd = end - l.length;
+        }
+        // Case 2: 选区本身已经被标记包了(例如选区是 "**agent**")
+        //         → 去掉里面的标记
+        else if (selected.startsWith(l) && selected.endsWith(r) &&
+                 selected.length >= l.length + r.length) {
+          const inner = selected.slice(l.length, selected.length - r.length);
+          editor.value = text.slice(0, start) + inner + text.slice(end);
+          editor.selectionStart = start;
+          editor.selectionEnd = start + inner.length;
+        }
+        // Case 3: 普通包装
+        else {
+          const newText = l + selected + r;
+          editor.value = text.slice(0, start) + newText + text.slice(end);
+          editor.selectionStart = editor.selectionEnd = start + newText.length;
+        }
+      }
+      lastPreviewSelection = '';  // 用完清空
+      editor.dispatchEvent(new Event('input'));
+    });
+  }
+
+  // Initialize pin button state + click toggle
+  if (pinToggleBtn) {
+    const updatePinIcon = (isPinned) => {
+      pinToggleBtn.textContent = isPinned ? '📌' : '📍';
+      pinToggleBtn.title = isPinned ? '已置顶(点击取消)' : '未置顶(点击置顶)';
+      pinToggleBtn.style.opacity = isPinned ? '1' : '0.5';
+    };
+    ipcRenderer.invoke('get-always-on-top').then(updatePinIcon);
+    pinToggleBtn.addEventListener('click', async () => {
+      const newState = await ipcRenderer.invoke('toggle-always-on-top');
+      updatePinIcon(newState);
+    });
+  }
 
   // Set initial titlebar state
   if (titlebar) {
@@ -366,8 +493,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   function saveSettings() {
-    const settings = { fontSize: currentFontSize };
+    const settings = { fontSize: currentFontSize, opacity: currentOpacity };
     fs.writeFile(settingsPath, JSON.stringify(settings, null, 2), () => {});
+  }
+
+  function applyOpacity() {
+    // 修改 CSS 变量本身, 这样 html/body/editor/preview/titlebar 全部跟着变
+    const a = currentOpacity;
+    document.documentElement.style.setProperty(
+      '--bg-color', `rgba(239, 236, 230, ${a})`
+    );
+    document.documentElement.style.setProperty(
+      '--titlebar-bg', `rgba(232, 228, 219, ${a})`
+    );
   }
 
   function updateView() {
@@ -396,6 +534,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (typeof settings.fontSize === 'number') {
         currentFontSize = settings.fontSize;
       }
+      if (typeof settings.opacity === 'number') {
+        currentOpacity = Math.max(opacityMin, Math.min(settings.opacity, opacityMax));
+      }
     }
   } catch {
     // Ignore if settings file does not exist or is malformed
@@ -403,6 +544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   editor.style.fontSize = `${currentFontSize}px`;
   preview.style.fontSize = `${currentFontSize}px`;
+  applyOpacity();
 
   ipcRenderer.on('load-note', async (event, notePath, isNew) => {
     currentPath = notePath;
@@ -477,7 +619,47 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.addEventListener('keydown', e => {
+    // Skip handler while IME is composing (e.g. Chinese/Japanese input).
+    if (e.isComposing || e.keyCode === 229) return;
+
     const editorIsFocused = document.activeElement === editor;
+
+    // === 在 only-preview 模式打字时, 自动把按键路由到隐藏的 editor ===
+    // 这样用户可以"在预览里直接打字", 看到预览实时渲染, 不用切到编辑器
+    if (!editorIsFocused && viewMode === 'only' && onlyTarget === 'preview'
+        && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      const printable = e.key.length === 1;
+      const isEnter = e.key === 'Enter';
+      const isBackspace = e.key === 'Backspace';
+      if (printable || isEnter || isBackspace) {
+        editor.focus();
+        // 把光标放到文件末尾(因为在预览模式下我们看不到光标, 默认追加更安全)
+        const pos = editor.value.length;
+        editor.selectionStart = editor.selectionEnd = pos;
+        if (printable) {
+          editor.value = editor.value.slice(0, pos) + e.key + editor.value.slice(pos);
+          editor.selectionStart = editor.selectionEnd = pos + 1;
+          editor.dispatchEvent(new Event('input'));
+          e.preventDefault();
+          return;
+        }
+        if (isEnter) {
+          editor.value = editor.value.slice(0, pos) + '\n' + editor.value.slice(pos);
+          editor.selectionStart = editor.selectionEnd = pos + 1;
+          editor.dispatchEvent(new Event('input'));
+          e.preventDefault();
+          return;
+        }
+        if (isBackspace && pos > 0) {
+          editor.value = editor.value.slice(0, pos - 1) + editor.value.slice(pos);
+          editor.selectionStart = editor.selectionEnd = pos - 1;
+          editor.dispatchEvent(new Event('input'));
+          e.preventDefault();
+          return;
+        }
+      }
+    }
+
     const start = editor.selectionStart;
     const end = editor.selectionEnd;
     const text = editor.value;
@@ -810,9 +992,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     e => {
       const isMac = process.platform === 'darwin';
       const modifierKey = isMac ? e.metaKey : e.ctrlKey;
-      
+
       if (!modifierKey) return;
       e.preventDefault();
+
+      // Cmd + Shift + 滚轮 → 调透明度
+      if (e.shiftKey) {
+        currentOpacity += e.deltaY < 0 ? 0.05 : -0.05;
+        currentOpacity = Math.max(opacityMin, Math.min(currentOpacity, opacityMax));
+        currentOpacity = Math.round(currentOpacity * 100) / 100;  // 避免浮点误差
+        applyOpacity();
+        saveSettings();
+        return;
+      }
+
+      // Cmd + 滚轮 → 调字号
       currentFontSize += e.deltaY < 0 ? 1 : -1;
       currentFontSize = Math.max(fontSizeMin, Math.min(currentFontSize, fontSizeMax));
       editor.style.fontSize = `${currentFontSize}px`;

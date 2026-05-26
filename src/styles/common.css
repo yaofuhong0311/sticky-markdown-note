@@ -2,26 +2,26 @@
 
 /* Base variables (Light mode default) */
 :root {
-    --bg-color: #f5f5f5;
-    --text-color: #333333;
-    --card-bg: #ffffff;
-    --button-bg: #e0e0e0;
-    --button-hover: #d0d0d0;
-    --button-text: #333333;
-    --border-color: #ddd;
-    --hover-color: #eee;
-    --accent-color: #8F689D;
-    --accent-hover-color: #7A5A85;
+    --bg-color: rgba(239, 236, 230, 0.9);  /* 温暖纸色 + 90% 不透明 */
+    --text-color: #3a3a3a;
+    --card-bg: #f5f2ec;
+    --button-bg: #d9d5cc;
+    --button-hover: #c8c4ba;
+    --button-text: #3a3a3a;
+    --border-color: #c4bfb4;
+    --hover-color: #e1ddd5;
+    --accent-color: #6a8c5a;       /* 柔和的绿色(checkbox 勾选用) */
+    --accent-hover-color: #557a47;
     --accent-button-text: #ffffff;
-    --light-accent-color: #E6DAEC;
-    --medium-accent-button-bg: #E8E8E8; /* Darker gray than titlebar */
-    --ultra-light-hover: #FCF8FC; /* Very light hover color (for general buttons) */
-    --titlebar-bg: #F5F5F5; /* Settings window titlebar color */
+    --light-accent-color: #d8e4d0;
+    --medium-accent-button-bg: #d9d5cc;
+    --ultra-light-hover: #ebe6da;
+    --titlebar-bg: #e8e4db;
 }
 
 /* Dark mode variable override */
 body.dark-mode {
-    --bg-color: #1a1a1a;
+    --bg-color: rgba(26, 26, 26, 0.9);
     --text-color: #ffffff;
     --card-bg: #2d2d2d;
     --button-bg: #4a4a4a;
@@ -64,7 +64,9 @@ body {
     top: 0;
     z-index: 99;
     display: flex;
+    align-items: center;
     justify-content: space-between;
+    padding: 0 4px;
     align-items: center;
     padding: 0 8px;
     -webkit-app-region: drag;
@@ -75,10 +77,11 @@ body {
 
 #titlebar button {
     -webkit-app-region: no-drag;
-    height: 30px;
-    line-height: 30px;
-    padding: 0 10px;
-    font-size: 13px;
+    height: 28px;
+    line-height: 28px;
+    padding: 0 6px;
+    font-size: 12px;
+    flex-shrink: 0;
     background-color: var(--titlebar-bg); /* Same as titlebar background color */
     color: var(--text-color);
     border: none;
@@ -91,8 +94,19 @@ body {
 }
 
 #titlebar .title-btn {
-    margin-left: 8px;
+    margin-left: 3px;
     opacity: 1 !important;
+}
+
+/* Right-side button group: don't wrap, allow horizontal scrolling if extremely narrow */
+#titlebar > div {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;  /* Firefox */
+}
+#titlebar > div::-webkit-scrollbar {
+    display: none;  /* Chrome/Safari */
 }
 
 input,

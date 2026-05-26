@@ -16,22 +16,172 @@ body {
     width: 100%;
     box-sizing: border-box;
     font-size: 16px;
-    padding: 10px;
-    padding-top: 40px;
+    padding: 10px 12px;
+    padding-top: 50px;
     resize: none;
     background-color: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
+                 "Fira Code", "PingFang SC", monospace;
+    line-height: 1.55;
 }
 
 #preview {
-    padding: 20px;
-    padding-top: 30px;
+    padding: 50px 16px 16px;
     overflow-y: auto;
     height: 100%;
     box-sizing: border-box;
     background-color: var(--bg-color);
     color: var(--text-color);
+    line-height: 1.55;
+    font-feature-settings: "kern" 1, "calt" 1;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
+                 "Fira Code", "PingFang SC", monospace;
+}
+
+/* 顶栏里的格式按钮: A 加上对应的样式作为图标 */
+#titlebar .format-btn {
+    min-width: 26px;
+    padding: 0 6px;
+    font-size: 14px;
+}
+#titlebar .format-btn b,
+#titlebar .format-btn i,
+#titlebar .format-btn u,
+#titlebar .format-btn s {
+    color: var(--text-color);
+}
+#titlebar .fb-divider {
+    display: inline-block;
+    width: 1px;
+    height: 16px;
+    background-color: rgba(0, 0, 0, 0.15);
+    margin: 0 4px;
+    vertical-align: middle;
+}
+
+/* 不再需要的 view 切换按钮(已经用 Cmd+O 代替) */
+#only-toggle {
+    display: none !important;
+}
+
+/* === 响应式: 窗口窄时按优先级隐藏格式按钮 ===
+   隐藏顺序: 斜体 → 下划线 → 代码 → 引号
+   保留的核心: 加粗 / 删除线 / 置顶 / List / 关闭 */
+
+/* < 420px: 隐藏 斜体 */
+@media (max-width: 420px) {
+    #titlebar .format-btn[data-action="italic"] { display: none; }
+}
+/* < 380px: 再隐藏 下划线 */
+@media (max-width: 380px) {
+    #titlebar .format-btn[data-action="underline"] { display: none; }
+}
+/* < 340px: 再隐藏 代码 */
+@media (max-width: 340px) {
+    #titlebar .format-btn[data-action="code"] { display: none; }
+}
+/* < 300px: 再隐藏 引号 */
+@media (max-width: 300px) {
+    #titlebar .format-btn[data-action="quote"] { display: none; }
+    #titlebar .fb-divider { display: none; }
+}
+
+/* === 借鉴 Antinote 的语法高亮 === */
+
+/* 行内 code: `xxx` → 蓝绿色,带浅色背景 */
+#preview code {
+    background-color: rgba(74, 123, 166, 0.1);
+    color: #2a6b8a;
+    padding: 0.1em 0.4em;
+    border-radius: 0.25em;
+    font-size: 0.92em;
+}
+
+/* 代码块: ```...``` */
+#preview pre code {
+    background-color: transparent;
+    color: var(--text-color);
+    padding: 0;
+}
+
+/* 加粗 **xxx** → 深蓝灰色 */
+#preview strong {
+    color: #2a4a5f;
+    font-weight: 600;
+}
+
+/* 斜体 *xxx* → 暖灰色 */
+#preview em {
+    color: #7a6d5e;
+    font-style: italic;
+}
+
+/* 标题: 不同层级不同色 */
+#preview h1, #preview h2, #preview h3,
+#preview h4, #preview h5, #preview h6 {
+    color: #2a4a5f;
+    margin: 0.7em 0 0.3em;
+    line-height: 1.3;
+    font-weight: 600;
+}
+#preview h1 {
+    font-size: 1.4em;
+    border-bottom: 1px solid rgba(42, 74, 95, 0.2);
+    padding-bottom: 0.15em;
+}
+#preview h2 { font-size: 1.2em; }
+#preview h3 { font-size: 1.08em; }
+
+/* 链接: 蓝色下划线 */
+#preview a {
+    color: #4a7ba6;
+    text-decoration: underline;
+    text-decoration-color: rgba(74, 123, 166, 0.4);
+    text-underline-offset: 0.18em;
+}
+#preview a:hover {
+    text-decoration-color: rgba(74, 123, 166, 0.9);
+}
+
+/* 引用 > xxx → 绿色侧边 + 浅背景 */
+#preview blockquote {
+    border-left: 3px solid rgba(106, 140, 90, 0.5);
+    padding: 0.25em 0.85em;
+    margin: 0.5em 0;
+    color: #5a554f;
+    background-color: rgba(106, 140, 90, 0.05);
+    border-radius: 0 0.25em 0.25em 0;
+}
+
+/* 分隔线 --- */
+#preview hr {
+    border: none;
+    border-top: 1px dashed rgba(0, 0, 0, 0.15);
+    margin: 0.8em 0;
+}
+
+/* 删除线 ~~xxx~~ */
+#preview del {
+    color: #999;
+}
+
+/* 顶层 ul 几乎贴左,留少量呼吸空间 */
+#preview > ul,
+#preview > ol {
+    padding-left: 0.3em;
+    margin: 0;
+}
+
+/* 嵌套 ul/ol 明显缩进,加左侧虚线指示父子关系 */
+#preview ul ul,
+#preview ul ol,
+#preview ol ul,
+#preview ol ol {
+    padding-left: 1.4em;
+    margin: 0.2em 0 0.2em 0.3em;
+    border-left: 1px dashed rgba(0, 0, 0, 0.12);
 }
 
 #preview img {
@@ -91,14 +241,22 @@ body.only-mode #preview {
 #preview input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--accent-color);
-  border-radius: 3px;
-  margin-right: 8px;
+  width: 0.95em;
+  height: 0.95em;
+  border: 1.5px solid #a8a39a;
+  border-radius: 0.25em;
+  margin-right: 0.5em;
   position: relative;
   cursor: pointer;
-  vertical-align: middle;
+  vertical-align: -2px;
+  flex-shrink: 0;
+  background-color: rgba(255, 255, 255, 0.5);
+  transition: all 0.15s ease;
+}
+
+#preview input[type="checkbox"]:hover {
+  border-color: #6a655c;
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 #preview input[type="checkbox"]:checked {
@@ -109,12 +267,12 @@ body.only-mode #preview {
 #preview input[type="checkbox"]:checked::after {
   content: '';
   position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
+  left: 0.25em;
+  top: 0.06em;
+  width: 0.25em;
+  height: 0.5em;
   border: solid var(--accent-button-text);
-  border-width: 0 2px 2px 0;
+  border-width: 0 0.125em 0.125em 0;
   transform: rotate(45deg);
 }
 
@@ -135,13 +293,43 @@ body.only-mode #preview {
 }
 
 #preview li {
-  margin: 5px 0;
+  margin: 0.35em 0;
+}
+
+/* Task list items don't need bullet — checkbox already serves as item marker */
+/* 两种结构都要处理: 简单的 <li><input>... 和 loose list 的 <li><p><input>... */
+#preview li:has(> input[type="checkbox"]),
+#preview li:has(> p > input[type="checkbox"]) {
+  list-style: none;
+}
+
+/* Strikethrough + dim text when checkbox is checked */
+#preview li:has(> input[type="checkbox"]:checked),
+#preview li:has(> p > input[type="checkbox"]:checked) {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(58, 58, 58, 0.7);
+  color: #888;
+}
+/* loose list 时, 也给 <p> 加划线(部分浏览器 text-decoration 不继承到子块) */
+#preview li > p:has(> input[type="checkbox"]:checked) {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: rgba(58, 58, 58, 0.7);
+  color: #888;
+}
+
+/* Don't propagate strikethrough/dim to nested sub-lists (they keep their own state) */
+#preview li:has(input[type="checkbox"]:checked) > ul,
+#preview li:has(input[type="checkbox"]:checked) > ol {
+  text-decoration: none;
+  color: var(--text-color);
 }
 
 .checkbox-item {
   display: flex;
   align-items: center;
-  margin: 4px 0;
+  margin: 0.25em 0;
 }
 
 .checkbox-text {

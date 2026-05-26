@@ -39,9 +39,10 @@ class CheckboxManager {
 
     // Update checkbox state
     const indent = lines[checkboxLineIdx].match(/^\s*/)[0];
-    const bullet = lines[checkboxLineIdx].match(/^\s*[-+*]|\d+\./)[0];
+    const bulletMatch = lines[checkboxLineIdx].match(/^\s*([-+*]|\d+\.)/);
+    const bullet = bulletMatch ? bulletMatch[1] : '-';
     const newLine = lines[checkboxLineIdx].replace(
-      /^\s*[-+*] \[[ x]\]|^\s*\d+\. \[[ x]\]/,
+      /^\s*(?:[-+*]|\d+\.) \[[ x]\]/,
       `${indent}${bullet} [${checkbox.checked ? 'x' : ' '}]`
     );
     lines[checkboxLineIdx] = newLine;

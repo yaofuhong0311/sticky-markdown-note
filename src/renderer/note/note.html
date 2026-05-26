@@ -11,8 +11,16 @@
     <div id="titlebar">
       <button id="new-note" class="title-btn">➕</button>
       <div>
-        <button id="view-toggle" class="title-btn">both</button>
+        <button id="view-toggle" class="title-btn" style="display:none;">both</button>
         <button id="only-toggle" class="title-btn" style="display:none;">✏️</button>
+        <button class="title-btn format-btn" data-action="bold" title="加粗"><b>A</b></button>
+        <button class="title-btn format-btn" data-action="italic" title="斜体"><i>A</i></button>
+        <button class="title-btn format-btn" data-action="underline" title="下划线"><u>A</u></button>
+        <button class="title-btn format-btn" data-action="strikethrough" title="删除线"><s>A</s></button>
+        <button class="title-btn format-btn" data-action="code" title="行内代码">&lt;/&gt;</button>
+        <button class="title-btn format-btn" data-action="quote" title="引用">"</button>
+        <span class="fb-divider"></span>
+        <button id="pin-toggle" class="title-btn" title="置顶/取消置顶">📌</button>
         <button id="open-list" class="title-btn">List</button>
         <button onclick="window.close()" class="title-btn">✖</button>
       </div>
