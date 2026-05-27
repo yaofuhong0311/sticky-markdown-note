@@ -71,6 +71,14 @@ function createMainWindow() {
   });
 }
 
+// 整窗口透明度(连文字也变淡的那种, 像 Antinote)
+ipcMain.on('set-window-opacity', (event, value) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win && typeof value === 'number') {
+    win.setOpacity(Math.max(0.1, Math.min(value, 1.0)));
+  }
+});
+
 function createNoteWindow(notePath, position = null, isNew = false) {
   const fullPath = path.resolve(notePath); // Standardize path
 

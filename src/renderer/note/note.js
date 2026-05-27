@@ -498,14 +498,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function applyOpacity() {
-    // 修改 CSS 变量本身, 这样 html/body/editor/preview/titlebar 全部跟着变
-    const a = currentOpacity;
-    document.documentElement.style.setProperty(
-      '--bg-color', `rgba(239, 236, 230, ${a})`
-    );
-    document.documentElement.style.setProperty(
-      '--titlebar-bg', `rgba(232, 228, 219, ${a})`
-    );
+    // 用 Electron BrowserWindow.setOpacity 改整个窗口透明度
+    // 这是 Antinote / Tot 用的方式: 连文字也淡化, "毛玻璃 -> 真透"
+    ipcRenderer.send('set-window-opacity', currentOpacity);
   }
 
   function updateView() {

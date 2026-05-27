@@ -20,11 +20,13 @@ body {
     padding-top: 50px;
     resize: none;
     background-color: var(--bg-color);
-    color: var(--text-color);
+    color: #4a4540;
     border: 1px solid var(--border-color);
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
-                 "Fira Code", "PingFang SC", monospace;
-    line-height: 1.55;
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", "PingFang SC", monospace;
+    line-height: 1.8;
+    letter-spacing: 0.04em;
+    word-spacing: 0.08em;
+    -webkit-font-smoothing: antialiased;
 }
 
 #preview {
@@ -33,11 +35,14 @@ body {
     height: 100%;
     box-sizing: border-box;
     background-color: var(--bg-color);
-    color: var(--text-color);
-    line-height: 1.55;
+    color: #4a4540;                /* 暖棕色,不是纯黑(Antinote 风) */
+    line-height: 1.8;             /* 更大行高,呼吸感 */
+    letter-spacing: 0.04em;       /* 字间距加宽 */
+    word-spacing: 0.08em;         /* 词间距微加宽 */
     font-feature-settings: "kern" 1, "calt" 1;
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono",
-                 "Fira Code", "PingFang SC", monospace;
+    font-family: "IBM Plex Mono", ui-monospace, "SF Mono", "PingFang SC", monospace;
+    -webkit-font-smoothing: antialiased;    /* 字体渲染更细腻 */
+    -moz-osx-font-smoothing: grayscale;
 }
 
 /* 顶栏里的格式按钮: A 加上对应的样式作为图标 */
@@ -241,15 +246,14 @@ body.only-mode #preview {
 #preview input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 0.95em;
-  height: 0.95em;
+  width: 0.9em;
+  height: 0.9em;
   border: 1.5px solid #a8a39a;
   border-radius: 0.25em;
-  margin-right: 0.5em;
+  margin: 0 0.45em 0 0;
   position: relative;
   cursor: pointer;
-  vertical-align: -2px;
-  flex-shrink: 0;
+  vertical-align: middle;
   background-color: rgba(255, 255, 255, 0.5);
   transition: all 0.15s ease;
 }
@@ -297,10 +301,14 @@ body.only-mode #preview {
 }
 
 /* Task list items don't need bullet — checkbox already serves as item marker */
-/* 两种结构都要处理: 简单的 <li><input>... 和 loose list 的 <li><p><input>... */
 #preview li:has(> input[type="checkbox"]),
 #preview li:has(> p > input[type="checkbox"]) {
   list-style: none;
+}
+
+/* loose-list 时 <p> 移除默认 margin */
+#preview li > p:has(> input[type="checkbox"]) {
+  margin: 0;
 }
 
 /* Strikethrough + dim text when checkbox is checked */
